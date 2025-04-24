@@ -1,7 +1,7 @@
 {
   "name": "farmbackend",
   "version": "1.0.0",
-  "description": "Backend API's and MongoDB scema",
+  "description": "Backend API's and MongoDB schema",
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
