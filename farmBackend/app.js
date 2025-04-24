@@ -4,7 +4,11 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import Farm from './models/farm.js';
+import { MongoClient, ServerApiVersion } from 'mongodb';
 
+
+// Load environment variables
+dotenv.config();
 
 
 // Initialize Express app
@@ -14,16 +18,21 @@ const app = express();
 app.use(cors()); // Enable Cross-Origin Resource Sharing
 app.use(express.json()); // Enable JSON body parsing in requests
 
-// MongoDB connection
-mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/harvest', {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-})
-    .then(() => console.log('Connected to MongoDB'))
-    .catch((err) => console.error('MongoDB connection error:', err));
 
-// Example route (you can replace this with your actual routes)
-app.get('/', (req, res) => {
+// MongoDB connection using MongoClient
+const uri = "mongodb+srv://" +
+    "farmadmin:farmersunite@cluster0.jiatbwr.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
+
+
+mongoose.connect(uri, {
+    dbName: 'Farm_info' // Specify the database name if needed
+})
+    .then(() => console.log("Connected to MongoDB using Mongoose"))
+    .catch(err => console.error("MongoDB connection error:", err));
+
+
+// Example route NEED TO USE SCHEMAS HERE
+app.post('/', (req, res) => {
     res.send('Welcome to the Harvest API!');
 });
 
