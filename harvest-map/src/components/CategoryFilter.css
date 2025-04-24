@@ -1,0 +1,18 @@
+/* src/components/CategoryFilter.css */
+.category-filter {
+    position: sticky;
+    top: 80px;
+    background: #fff;
+    border-bottom: 1px solid #ddd;
+    padding: 0.5rem 1rem;
+
+    display: flex;         /* ✅ 直接在外层开 Flex */
+    flex-wrap: nowrap;     /* 不换行 */
+    justify-content: center;  /* 居中所有按钮 */
+    gap: 0.75rem;          /* 按钮间隙 */
+    overflow-x: auto;      /* 超出时横向滚动 */
+
+    /* 以下可选：隐藏自带滚动条（不同浏览器写法略有不同） */
+    scrollbar-width: thin;
+    scrollbar-color: #ccc transparent;
+}
