@@ -3,9 +3,9 @@ import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import Farm from './models/farm.js';
 import { MongoClient, ServerApiVersion } from 'mongodb';
-
+import Product from './models/product_schema.js';
+import Shop from './models/shop_schema.js';
 
 // Load environment variables
 dotenv.config();
