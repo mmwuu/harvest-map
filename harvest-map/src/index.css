@@ -26,10 +26,10 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 0;
+  padding: 1rem 0; /* 保持 Header 内边距 */
   border-bottom: 1px solid #eee;
   background: #fff;
-  position: sticky;
+  position: sticky; /* Header 保持 sticky */
   top: 0;
   z-index: 100;
 }
@@ -40,7 +40,7 @@ body {
   align-items: center;
   border: 1px solid #ddd;
   border-radius: 9999px;
-  overflow: hidden;
+  overflow: hidden; /* 改为 hidden 防止内部元素溢出 */
 }
 
 .search-bar button {
@@ -49,31 +49,49 @@ body {
   padding: 0.5rem 1rem;
   cursor: pointer;
   font-weight: bold;
+  white-space: nowrap; /* 防止按钮文字换行 */
 }
 
-.search-bar button + button {
-  border-left: 1px solid #ddd;
+/* 为按钮之间的分隔线添加样式 */
+.search-bar button:not(:last-child) {
+  border-right: 1px solid #ddd;
 }
+
 
 .search-bar .icon-btn {
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0.5rem;
+  border-left: 1px solid #ddd; /* 搜索图标按钮左侧加分隔线 */
 }
 
-/* 分类横条 */
+/* 分类横条 - 修改后 */
 .category-filter {
   display: flex;
   gap: 1rem;
-  overflow-x: auto;
-  padding: 0.75rem 0;
+  overflow-x: auto;        /* 保留横向滚动 */
+  padding: 0.75rem 0;      /* 保留上下内边距 */
   border-bottom: 1px solid #eee;
   background: #fff;
-  position: sticky;
-  top: 64px; /* Header 高度 + margin */
-  z-index: 90;
+  /* position: sticky; <-- 已移除 */
+  /* top: 64px;       <-- 已移除 */
+  /* z-index: 90;       <-- 已移除 */
+  /* 可以根据需要添加 margin-top/bottom 来调整与 Header 和内容的间距 */
+  margin-top: 1rem;
+  margin-bottom: 1rem;
 }
+
+/* 为分类按钮容器添加左右内边距，使其与 Header/Footer 对齐 */
+.category-filter .buttons-container { /* 可以给 CategoryFilter.jsx 里的按钮容器 div 添加这个 class */
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.75rem;
+  max-width: 1200px; /* 限制最大宽度 */
+  margin: 0 auto; /* 居中 */
+  padding: 0 1rem; /* 添加左右内边距 */
+}
+
 
 .category-filter button {
   display: flex;
@@ -83,12 +101,20 @@ body {
   border: 1px solid #ddd;
   border-radius: 9999px;
   cursor: pointer;
-  white-space: nowrap;
+  white-space: nowrap; /* 防止按钮文字换行 */
+  flex-shrink: 0; /* 防止按钮被压缩 */
+  transition: background 0.2s, border-color 0.2s; /* 添加过渡效果 */
 }
+
+.category-filter button:hover {
+  border-color: #999; /* 添加悬停效果 */
+}
+
 
 .category-filter button.active {
   border-color: #28a745;
   color: #28a745;
+  background: #e6ffed; /* 添加激活背景色 */
 }
 
 /* 农场网格 */
@@ -96,7 +122,7 @@ body {
   display: grid;
   grid-template-columns: repeat(auto-fill,minmax(280px,1fr));
   gap: 1rem;
-  padding: 1.5rem 0;
+  padding: 1.5rem 0; /* 保持上下内边距 */
 }
 
 /* 卡片 */
@@ -112,23 +138,32 @@ body {
 .card:hover {
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
-.card img {
+.card img { /* 明确选择 card 内的 img */
   width: 100%;
   height: 180px;
   object-fit: cover;
+  display: block; /* 消除图片下方可能存在的空隙 */
 }
 .card-body {
   padding: 1rem;
 }
 .card-body h3 {
   margin-bottom: 0.5rem;
+  font-size: 1.1rem; /* 调整标题大小 */
 }
+.card-body p {
+  font-size: 0.9rem; /* 调整段落文字大小 */
+  margin-bottom: 0.25rem; /* 添加段落下间距 */
+  color: #555; /* 调整文字颜色 */
+}
+
 
 /* Footer */
 .footer {
-  background: #fff;
+  background: #f8f9fa; /* 稍微改变页脚背景色 */
   border-top: 1px solid #eee;
-  padding: 2rem 0;
+  padding: 2rem 0; /* 保持上下内边距 */
+  margin-top: 2rem; /* 添加顶部外边距 */
 }
 .footer-columns {
   display: flex;
@@ -140,12 +175,75 @@ body {
   flex: 1;
   min-width: 200px;
 }
+.footer-column h4 { /* 为页脚标题添加样式 */
+  font-weight: bold;
+  margin-bottom: 0.75rem;
+  color: #333;
+}
+
 .footer p,
 .footer a {
   color: #555;
   font-size: 0.9rem;
   text-decoration: none;
+  display: block; /* 让链接独占一行 */
+  margin-bottom: 0.5rem; /* 添加链接间距 */
 }
 .footer a:hover {
   text-decoration: underline;
 }
+
+/* 底部版权信息 */
+.footer .copyright {
+  text-align: center;
+  border-top: 1px solid #eee;
+  padding-top: 1.5rem;
+  margin-top: 1.5rem;
+  font-size: 0.85rem;
+  color: #777;
+}
+.footer .copyright a {
+  display: inline; /* 让版权行的链接内联显示 */
+  margin: 0 0.5rem;
+}
+
+/* 可选：为分类滚动条添加样式 (仅 Webkit 浏览器如 Chrome, Safari) */
+.category-filter::-webkit-scrollbar {
+  height: 6px; /* 滚动条高度 */
+}
+
+.category-filter::-webkit-scrollbar-track {
+  background: #f1f1f1; /* 滚动条轨道背景 */
+  border-radius: 3px;
+}
+
+.category-filter::-webkit-scrollbar-thumb {
+  background: #ccc; /* 滚动条滑块颜色 */
+  border-radius: 3px;
+}
+
+.category-filter::-webkit-scrollbar-thumb:hover {
+  background: #aaa; /* 鼠标悬停时滑块颜色 */
+}
+
+/* 使 .container 应用于 Header, CategoryFilter, FeaturedFarms, Footer */
+.header, .category-filter, .featured-grid, .footer {
+  width: 90%;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem; /* 添加左右内边距 */
+  padding-right: 1rem;
+}
+
+/* 特别为 Header 和 CategoryFilter 调整，因为它们有背景和边框 */
+.header, .category-filter {
+  width: 100%; /* 让背景和边框横跨整个屏幕 */
+  max-width: none; /* 取消最大宽度限制 */
+  padding-left: calc((100% - min(90%, 1200px)) / 2 + 1rem); /* 计算内边距以对齐内容 */
+  padding-right: calc((100% - min(90%, 1200px)) / 2 + 1rem);
+}
+
+/* 如果 Header 和 CategoryFilter 内部直接使用了 .container 类，则移除上面的特殊调整 */
+
+
