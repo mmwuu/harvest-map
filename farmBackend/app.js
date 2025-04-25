@@ -3,7 +3,6 @@ import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { MongoClient, ServerApiVersion } from 'mongodb';
 import Shop from './models/shop_schema.js';
 
 // Axios for http requests to map api
@@ -25,7 +24,7 @@ app.use(express.json()); // Enable JSON body parsing in requests
 
 
 // MongoDB connection using MongoClient
-const uri = MONGODB_URI;
+const uri = process.env.MONGODB_URI;
 
 mongoose.connect(uri, {
     dbName: 'Farm_Info' // database name
@@ -44,7 +43,7 @@ app.get('/api/farmshops/byRegion', async (req, res) => {
 
     try {
         // Query the database for shops in the given region
-        const shops = await Shop.find({ areaOfInterest: region }).populate('productIDList');
+        const shops = await Shop.find({ areaOfInterest: region });
 
         if (shops.length === 0) {
             return res.status(404).json({ error: 'No shops found in the specified region' });
@@ -93,6 +92,7 @@ app.get('/api/farmshops/byProduct', async (req, res) => {
 });
 
 
+
 // Geocoding endpoint to convert address to coordinates
 app.post('/api/geocode', async (req, res) => {
     const { address } = req.body;
@@ -124,49 +124,50 @@ app.post('/api/geocode', async (req, res) => {
 
 // Endpoint to add the area of interest to a shop when we get its address from the request body
 app.post('/api/farmshops/areaOfInterest', async (req, res) => {
-    const { shopID, coordinates } = req.body;
+        const {shopID, coordinates} = req.body;
 
-    if (!shopID || !coordinates || !coordinates.latitude || !coordinates.longitude) {
-        return res.status(400).json({ error: 'shopID and valid coordinates are required' });
-    }
-
-    // Find the closest region
-    const { latitude, longitude } = coordinates;
-    let closestRegion = 'Other';
-    let minDistance = Infinity;
-
-    for (const location of locations) {
-        const distance = Math.sqrt(
-            Math.pow(location.latitude - latitude, 2) + Math.pow(location.longitude - longitude, 2)
-        );
-
-        if (distance < minDistance) {
-            minDistance = distance;
-            closestRegion = location.region;
-        }
-    }
-    // Check if the closest region is within 70 km (0.7 degrees)
-    if (minDistance > 0.7) {
-        closestRegion = 'Other';
-    }
-
-    try {
-        const updatedShop = await Shop.findOneAndUpdate(
-            { shopID },
-            { areaOfInterest: closestRegion },
-            { new: true }
-        );
-
-        if (!updatedShop) {
-            return res.status(404).json({ error: 'Shop not found' });
+        if (!shopID || !coordinates || !coordinates.latitude || !coordinates.longitude) {
+            return res.status(400).json({error: 'shopID and valid coordinates are required'});
         }
 
-        res.json({ message: 'Area of interest updated successfully', shop: updatedShop });
-    } catch (error) {
-        console.error('Error updating area of interest:', error);
-        res.status(500).json({ error: 'Server error' });
+        // Find the closest region
+        const {latitude, longitude} = coordinates;
+        let closestRegion = 'Other';
+        let minDistance = Infinity;
+
+        for (const location of locations) {
+            const distance = Math.sqrt(
+                Math.pow(location.latitude - latitude, 2) + Math.pow(location.longitude - longitude, 2)
+            );
+
+            if (distance < minDistance) {
+                minDistance = distance;
+                closestRegion = location.region;
+            }
+        }
+        // Check if the closest region is within 70 km (0.7 degrees)
+        if (minDistance > 0.7) {
+            closestRegion = 'Other';
+        }
+
+        try {
+            const updatedShop = await Shop.findOneAndUpdate(
+                {shopID},
+                {areaOfInterest: closestRegion},
+                {new: true} // Return the updated document
+            );
+
+            if (!updatedShop) {
+                return res.status(404).json({error: 'Shop not found'});
+            }
+
+            res.json({message: 'Area of interest updated successfully', shop: updatedShop});
+        } catch (error) {
+            console.error('Error updating area of interest:', error);
+            res.status(500).json({error: 'Server error'});
+        }
     }
-});
+)
 
 // Fallback route
 app.use((req, res) => {

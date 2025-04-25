@@ -1,15 +1,12 @@
-const mongoose = require('mongoose');
-import locations from '../utils/locations.js';
-
+import mongoose from "mongoose";
 
 const shopSchema = new mongoose.Schema({
     shopID: { type: String, required: true, unique: true },
     ownerName: { type: String, required: true },
     farmName: { type: String, required: true },
     avgRating: { type: Number, default: 0 },
-    areaOfInterest: { type: String,
-        enum: locations
-    },
+
+    areaOfInterest: { type: String, required: true },
 
     coordinates: {
         longitude: { type: Number, required: true },
@@ -33,4 +30,4 @@ const shopSchema = new mongoose.Schema({
     photos: [{ type: [String], required: true }],
 });
 
-module.exports = mongoose.model('Shop', shopSchema);
+export default mongoose.model('Shop', shopSchema);
