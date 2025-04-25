@@ -1,20 +1,72 @@
-import React from 'react';
+import React, {useState} from 'react';
 import { createRoot } from 'react-dom/client';
-import {APIProvider, Map, MapCameraChangedEvent} from '@vis.gl/react-google-maps';
+import {APIProvider, Map, AdvancedMarker,
+    MapCameraChangedEvent,
+    Pin} from '@vis.gl/react-google-maps';
 
-const App = () => (
-    <APIProvider apiKey={'AIzaSyB3g1sYu3KcRGPC2FJvhOszWGqto_6x6rY'} onLoad={() => console.log('Maps API has loaded.')}>
-        <Map
-            defaultZoom={13}
-            defaultCenter={ { lat: -33.860664, lng: 151.208138 } }
-            onCameraChanged={ (ev: MapCameraChangedEvent) =>
-                console.log('camera changed:', ev.detail.center, 'zoom:', ev.detail.zoom)
-            }>
-        </Map>
-    </APIProvider>
+type Poi ={ key: string, location: google.maps.LatLngLiteral }
+const locations: Poi[] = [
+    { key: 'Yarra Valley', location: { lat: -37.6536, lng: 145.5182 }},
+    { key: 'Mornington Peninsula', location: { lat: -38.3482, lng: 145.0197 }},
+    { key: 'Dandenong Ranges',  location: {lat: -37.8555, lng: 145.3534 }},
+    { key: 'Macedon Ranges', location: { lat: -37.3917, lng: 144.5803 }},
+    { key: 'Phillip Island',  location: {lat: -38.4848, lng: 145.2373 }},
+    { key: 'Bellarine Peninsula', location: { lat: -38.2672, lng: 144.6620 }},
+    { key: 'Daylesford / Hepburn', location: { lat: -37.3430, lng: 144.1420 }},
+    { key: 'Gippsland', location: { lat: -38.6180, lng: 146.0005 }},
+    { key: 'Warburton & Upper Yarra', location: { lat: -37.7530, lng: 145.6892 }},
+];
+
+const PoiMarkers = ({ pois }: { pois: Poi[] }) => (
+    <>
+        {pois.map((poi) => (
+            <AdvancedMarker key={poi.key} position={poi.location}>
+                <Pin background={'"#FBBC04"'} glyphColor={'#000'} borderColor={'#000'} />
+            </AdvancedMarker>
+        ))}
+    </>
 );
 
-const root = createRoot(document.getElementById('app'));
-root.render(<App />);
+const App = () => {
+    const [selectedKey, setSelectedKey] = useState('Yarra Valley');
+    let center = { lat: -36.55, lng: 145.45 }; // default center
 
+    for (let i = 0; i < locations.length; i++) {
+        if (locations[i].key === selectedKey) {
+            center = locations[i].location;
+            break;
+        }
+    }
+
+    return (
+        <APIProvider apiKey={'AIzaSyB3g1sYu3KcRGPC2FJvhOszWGqto_6x6rY'}>
+            <div style={{ height: '100vh', width: '100%' }}>
+                <select
+                    value={selectedKey}
+                    onChange={(e) => setSelectedKey(e.target.value)}
+                    style={{ position: 'absolute', zIndex: 10, top: 10, left: 10 }}
+                >
+                    {locations.map((loc) => (
+                        <option key={loc.key} value={loc.key}>
+                            {loc.key}
+                        </option>
+                    ))}
+                </select>
+
+                <Map
+                    defaultZoom={13}
+                    center={center}
+                    onCameraChanged={(ev: MapCameraChangedEvent) =>
+                        console.log('camera changed:', ev.detail.center, 'zoom:', ev.detail.zoom)
+                    }
+                >
+                    <PoiMarkers pois={locations} />
+                </Map>
+            </div>
+        </APIProvider>
+    );
+};
+
+const root = createRoot(document.getElementById('app')!);
+root.render(<App />);
 export default App;
