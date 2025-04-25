@@ -146,6 +146,42 @@ app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
 });
 
+app.get('/api/farmshops/byProduct', async (req, res) => {
+    const { productName } = req.query;
+
+    if (!productName) {
+        return res.status(400).json({ error: 'Product name is required' });
+    }
+
+    try {
+        // Step 1: Find products that match the name (case-insensitive)
+        const matchingProducts = await Products.find({
+            productName: { $regex: new RegExp(productName, 'i') }
+        });
+
+        if (matchingProducts.length === 0) {
+            return res.status(404).json({ error: 'No products found with that name' });
+        }
+
+        // Step 2: Get the productIDs from the matching products
+        const productIDs = matchingProducts.map(p => p.productID);
+
+        // Step 3: Find shops that list any of these product IDs
+        const shops = await Shop.find({ productIDList: { $in: productIDs } });
+
+        if (shops.length === 0) {
+            return res.status(404).json({ error: 'No shops found selling that product' });
+        }
+
+        res.json({ productName, shops });
+    } catch (error) {
+        console.error('Error querying shops by product name:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+
+
 
 // Import routes
 // Example: const farmRoutes = require('./routes/farms');
