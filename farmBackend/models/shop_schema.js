@@ -29,15 +29,8 @@ const shopSchema = new mongoose.Schema({
         enum: ['Dairy & Cheese', 'Fruits', 'Vegetables', 'Wine', 'Poultry', 'Honey', 'Eggs', 'Flowers & Plants', 'Other'],
         required: true
     }],
-    photos: {
-        type: [String],
-        validate: {
-            validator: function (photos) {
-                return photos.every(photo => /\.(jpg|jpeg|png)$/i.test(photo));
-            },
-            message: 'Photos must be in .jpg, .jpeg, or .png format'
-        }
-    }
+    // Image URL list (all images stored in google cloud)
+    photos: [{ type: [String], required: true }],
 });
 
 module.exports = mongoose.model('Shop', shopSchema);
