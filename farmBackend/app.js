@@ -4,7 +4,6 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { MongoClient, ServerApiVersion } from 'mongodb';
-import Product from './models/product_schema.js';
 import Shop from './models/shop_schema.js';
 
 // Axios for http requests to map api
@@ -54,6 +53,41 @@ app.get('/api/farmshops/byRegion', async (req, res) => {
         res.json({ region, shops });
     } catch (error) {
         console.error('Error querying the database:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+
+app.get('/api/farmshops/byProduct', async (req, res) => {
+    const { productName } = req.query;
+
+    if (!productName) {
+        return res.status(400).json({ error: 'Product name is required' });
+    }
+
+    try {
+        // Step 1: Find products that match the name (case-insensitive)
+        const matchingProducts = await Products.find({
+            productName: { $regex: new RegExp(productName, 'i') }
+        });
+
+        if (matchingProducts.length === 0) {
+            return res.status(404).json({ error: 'No products found with that name' });
+        }
+
+        // Step 2: Get the productIDs from the matching products
+        const productIDs = matchingProducts.map(p => p.productID);
+
+        // Step 3: Find shops that list any of these product IDs
+        const shops = await Shop.find({ productIDList: { $in: productIDs } });
+
+        if (shops.length === 0) {
+            return res.status(404).json({ error: 'No shops found selling that product' });
+        }
+
+        res.json({ productName, shops });
+    } catch (error) {
+        console.error('Error querying shops by product name:', error);
         res.status(500).json({ error: 'Server error' });
     }
 });
@@ -144,40 +178,6 @@ app.use((req, res) => {
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
-});
-
-app.get('/api/farmshops/byProduct', async (req, res) => {
-    const { productName } = req.query;
-
-    if (!productName) {
-        return res.status(400).json({ error: 'Product name is required' });
-    }
-
-    try {
-        // Step 1: Find products that match the name (case-insensitive)
-        const matchingProducts = await Products.find({
-            productName: { $regex: new RegExp(productName, 'i') }
-        });
-
-        if (matchingProducts.length === 0) {
-            return res.status(404).json({ error: 'No products found with that name' });
-        }
-
-        // Step 2: Get the productIDs from the matching products
-        const productIDs = matchingProducts.map(p => p.productID);
-
-        // Step 3: Find shops that list any of these product IDs
-        const shops = await Shop.find({ productIDList: { $in: productIDs } });
-
-        if (shops.length === 0) {
-            return res.status(404).json({ error: 'No shops found selling that product' });
-        }
-
-        res.json({ productName, shops });
-    } catch (error) {
-        console.error('Error querying shops by product name:', error);
-        res.status(500).json({ error: 'Server error' });
-    }
 });
 
 
