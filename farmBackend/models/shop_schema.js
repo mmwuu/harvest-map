@@ -5,6 +5,7 @@ const shopSchema = new mongoose.Schema({
     productIDList: [{ type: String, ref: 'Product' }],
     ownerName: { type: String, required: true },
     farmName: { type: String, required: true },
+    avgRating: { type: Number, default: 0 },
     areaOfInterest: { type: String },
     coordinates: {
         longitude: { type: Number, required: true },

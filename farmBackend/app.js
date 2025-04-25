@@ -10,6 +10,7 @@ import Shop from './models/shop_schema.js';
 // Axios for http requests to map api
 import axios from 'axios';
 
+import locations from './utils/locations.js';
 
 
 // Load environment variables
@@ -25,28 +26,40 @@ app.use(express.json()); // Enable JSON body parsing in requests
 
 
 // MongoDB connection using MongoClient
-const uri = "mongodb+srv://" +
-    "farmadmin:farmersunite@cluster0.jiatbwr.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
-
+const uri = MONGODB_URI;
 
 mongoose.connect(uri, {
-    dbName: 'Farm_info' // Specify the database name if needed
+    dbName: 'Farm_Info' // database name
 })
     .then(() => console.log("Connected to MongoDB using Mongoose"))
     .catch(err => console.error("MongoDB connection error:", err));
 
 
+// Endpoint to retrieve farm shops by region
+app.get('/api/farmshops/byRegion', async (req, res) => {
+    const { region } = req.query;
 
-// Geoc
+    if (!region) {
+        return res.status(400).json({ error: 'Region is required' });
+    }
 
+    try {
+        // Query the database for shops in the given region
+        const shops = await Shop.find({ areaOfInterest: region }).populate('productIDList');
 
+        if (shops.length === 0) {
+            return res.status(404).json({ error: 'No shops found in the specified region' });
+        }
 
-// Example route NEED TO USE SCHEMAS HERE
-app.post('/', (req, res) => {
-    res.send('Welcome to the Harvest API!');
+        res.json({ region, shops });
+    } catch (error) {
+        console.error('Error querying the database:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
 });
 
-// Geocoding API endpoint
+
+// Geocoding endpoint to convert address to coordinates
 app.post('/api/geocode', async (req, res) => {
     const { address } = req.body;
 
@@ -73,6 +86,59 @@ app.post('/api/geocode', async (req, res) => {
         res.status(500).json({ error: 'Server error' });
     }
 });
+
+
+// Endpoint to add the area of interest to a shop when we get its address from the request body
+app.post('/api/farmshops/areaOfInterest', async (req, res) => {
+    const { shopID, coordinates } = req.body;
+
+    if (!shopID || !coordinates || !coordinates.latitude || !coordinates.longitude) {
+        return res.status(400).json({ error: 'shopID and valid coordinates are required' });
+    }
+
+    // Find the closest region
+    const { latitude, longitude } = coordinates;
+    let closestRegion = 'Other';
+    let minDistance = Infinity;
+
+    for (const location of locations) {
+        const distance = Math.sqrt(
+            Math.pow(location.latitude - latitude, 2) + Math.pow(location.longitude - longitude, 2)
+        );
+
+        if (distance < minDistance) {
+            minDistance = distance;
+            closestRegion = location.region;
+        }
+    }
+    // Check if the closest region is within 70 km (0.7 degrees)
+    if (minDistance > 0.7) {
+        closestRegion = 'Other';
+    }
+
+    try {
+        const updatedShop = await Shop.findOneAndUpdate(
+            { shopID },
+            { areaOfInterest: closestRegion },
+            { new: true }
+        );
+
+        if (!updatedShop) {
+            return res.status(404).json({ error: 'Shop not found' });
+        }
+
+        res.json({ message: 'Area of interest updated successfully', shop: updatedShop });
+    } catch (error) {
+        console.error('Error updating area of interest:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// Fallback route
+app.use((req, res) => {
+    res.status(404).send('Route not found');
+});
+
 
 // Start the server
 const PORT = process.env.PORT || 5000;
