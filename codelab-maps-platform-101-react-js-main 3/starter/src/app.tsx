@@ -29,40 +29,38 @@ const PoiMarkers = ({ pois }: { pois: Poi[] }) => (
 
 const App = () => {
     const [selectedKey, setSelectedKey] = useState('Yarra Valley');
-    let center = { lat: -36.55, lng: 145.45 }; // default center
+    const [center, setCenter] = useState(locations[0].location);
 
-    for (let i = 0; i < locations.length; i++) {
-        if (locations[i].key === selectedKey) {
-            center = locations[i].location;
-            break;
+    const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const newKey = e.target.value;
+        setSelectedKey(newKey);
+
+        for (let i = 0; i < locations.length; i++) {
+            if (locations[i].key === newKey) {
+                setCenter(locations[i].location);
+                break;
+            }
         }
-    }
+    };
 
     return (
         <APIProvider apiKey={'AIzaSyB3g1sYu3KcRGPC2FJvhOszWGqto_6x6rY'}>
-            <div style={{ height: '100vh', width: '100%' }}>
-                <select
-                    value={selectedKey}
-                    onChange={(e) => setSelectedKey(e.target.value)}
-                    style={{ position: 'absolute', zIndex: 10, top: 10, left: 10 }}
-                >
-                    {locations.map((loc) => (
-                        <option key={loc.key} value={loc.key}>
-                            {loc.key}
-                        </option>
-                    ))}
+            <select onChange={handleChange} value={selectedKey} style={{ position: 'absolute', top: 10, left: 10, zIndex: 1 }}>
+                {locations.map(loc => (
+                    <option key={loc.key} value={loc.key}>{loc.key}</option>
+                ))}
                 </select>
 
                 <Map
-                    defaultZoom={13}
+                    mapId='DEMO_MAP_ID'
+                    zoom={10}
                     center={center}
                     onCameraChanged={(ev: MapCameraChangedEvent) =>
                         console.log('camera changed:', ev.detail.center, 'zoom:', ev.detail.zoom)
-                    }
-                >
+                    }>
                     <PoiMarkers pois={locations} />
                 </Map>
-            </div>
+
         </APIProvider>
     );
 };
