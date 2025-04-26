@@ -13,7 +13,7 @@ export default function Footer() {
                 {/* 其它两列同理 */}
             </div>
             <p>
-                &copy; {new Date().getFullYear()} FarmerFinder, Inc. &middot;
+                &copy; {new Date().getFullYear()} FarmFinder, Inc. &middot;
                 <a href="#">Privacy</a> &middot; <a href="#">Terms</a>
             </p>
         </footer>
