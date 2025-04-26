@@ -18,7 +18,7 @@ dotenv.config();
 // Initialize Express app
 const app = express();
 
-// Middleware
+// Middleware new
 app.use(cors({
     origin: '*', // Allow all origins
 })); // Enable Cross-Origin Resource Sharing
