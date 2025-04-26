@@ -57,36 +57,21 @@ app.get('/api/farmshops/byRegion', async (req, res) => {
 });
 
 
-app.get('/api/farmshops/byProduct', async (req, res) => {
-    const { productName } = req.query;
+app.get('/api/farmshops/byFarmType', async (req, res) => {
+    const { farmType } = req.query;
 
-    if (!productName) {
-        return res.status(400).json({ error: 'Product name is required' });
+    if (!farmType) {
+        return res.status(400).json({ error: 'Farm type is required' });
     }
 
     try {
-        // Step 1: Find products that match the name (case-insensitive)
-        const matchingProducts = await Products.find({
-            productName: { $regex: new RegExp(productName, 'i') }
-        });
-
-        if (matchingProducts.length === 0) {
-            return res.status(404).json({ error: 'No products found with that name' });
-        }
-
-        // Step 2: Get the productIDs from the matching products
-        const productIDs = matchingProducts.map(p => p.productID);
-
-        // Step 3: Find shops that list any of these product IDs
-        const shops = await Shop.find({ productIDList: { $in: productIDs } });
-
+        const shops = await Shop.find({ farmType: { $in: [farmType] } });
         if (shops.length === 0) {
-            return res.status(404).json({ error: 'No shops found selling that product' });
+            return res.status(404).json({ error: 'No shops found with that farm type' });
         }
-
-        res.json({ productName, shops });
+        res.json({ farmType, shops });
     } catch (error) {
-        console.error('Error querying shops by product name:', error);
+        console.error('Error querying by farm type:\\', error);
         res.status(500).json({ error: 'Server error' });
     }
 });
