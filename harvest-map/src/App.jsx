@@ -5,62 +5,69 @@ import Header from './components/Header.jsx';
 import FeaturedFarms from './components/FeaturedFarms.jsx';
 import Footer from './components/Footer.jsx';
 // Import only productTypesList from data.jsx, remove initialFarms
-import { /* featuredFarms as initialFarms, */ productTypesList } from './data.jsx';
+import { /* featuredFarms as initialFarms, */ productTypesList } from './data.jsx'; // Assuming data.jsx still exports productTypesList
 
 // Define the base URL for your backend API
-// Change this if your backend runs on a different port or host
-const API_BASE_URL = 'http://localhost:5000'; // Use the port defined in your backend .env
+// Ensure this matches where your backend is running (PORT 8000 based on curl)
+const API_BASE_URL = 'http://localhost:8000';
 
 export default function App() {
     // --- State Management ---
-    // Initialize allFarms as empty array, will be filled by API call
-    const [allFarms, setAllFarms] = useState([]);
+    const [allFarms, setAllFarms] = useState([]); // Initialize as empty array
     const [searchInput, setSearchInput] = useState('');
     const [selectedCity, setSelectedCity] = useState(null);
     const [selectedRegion, setSelectedRegion] = useState(null);
     const [selectedProductTypes, setSelectedProductTypes] = useState(new Set());
     const [favorites, setFavorites] = useState(new Set());
-    // Add loading and error states for the API call
-    const [isLoading, setIsLoading] = useState(true); // Start as true since we fetch on load
-    const [error, setError] = useState(null);
+    const [isLoading, setIsLoading] = useState(true); // Start loading on mount
+    const [error, setError] = useState(null); // State to hold fetch errors
 
     // --- Fetch Initial Farm Data ---
     useEffect(() => {
         const fetchInitialFarms = async () => {
             setIsLoading(true); // Set loading state
             setError(null); // Reset error state
+            // Use the combined search endpoint without filters to get all farms initially
+            const fetchUrl = `${API_BASE_URL}/api/farm-search`;
+            console.log(`[App] Attempting to fetch initial farms from ${fetchUrl}`); // Log fetch attempt
             try {
-                // Fetch from the backend endpoint (without filters initially)
-                // Use the /api/farm-search endpoint which should return all if no params are given
-                const response = await fetch(`${API_BASE_URL}/api/farm-search`);
+                const response = await fetch(fetchUrl);
+                console.log("[App] Fetch response status:", response.status); // Log response status
 
                 if (!response.ok) {
-                    // Handle HTTP errors like 404 or 500
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    // Try to get more specific error from response body if possible
+                    let errorBody = `Failed to fetch initial farm data (${response.status})`;
+                    try {
+                        const errData = await response.json();
+                        errorBody = errData.error || `HTTP error! status: ${response.status}`;
+                    } catch (e) { /* Ignore parsing error if response is not JSON */ }
+                    throw new Error(errorBody);
                 }
-                const data = await response.json();
 
-                // Check if the response has the expected 'farms' array
+                const data = await response.json();
+                console.log("[App] Raw API response data:", data); // Log raw data
+
+                // Check the structure of the received data (expecting { farms: [...] })
                 if (data && Array.isArray(data.farms)) {
                     setAllFarms(data.farms); // Update state with fetched farms
-                    console.log("[App] Fetched initial farms:", data.farms);
+                    console.log("[App] Successfully fetched and set initial farms:", data.farms.length);
                 } else {
-                    // Handle cases where response format is unexpected
-                    console.error("Unexpected API response format:", data);
+                    console.error("[App] Unexpected API response format:", data);
                     throw new Error("Received invalid data format from API.");
                 }
 
             } catch (err) {
-                console.error("Failed to fetch initial farms:", err);
-                setError(err.message || "Could not load farm data."); // Set error state
+                console.error("[App] Failed to fetch initial farms:", err);
+                setError(err.message || "Could not load farm data."); // Set specific error message
                 setAllFarms([]); // Clear farms on error
             } finally {
-                setIsLoading(false); // Set loading to false after fetch attempt
+                setIsLoading(false); // Ensure loading is set to false
+                console.log("[App] Fetch attempt finished."); // Log fetch end
             }
         };
 
         fetchInitialFarms(); // Call the fetch function when component mounts
-    }, []); // Empty dependency array means this runs only once on mount
+    }, []); // Empty dependency array ensures this runs only once on mount
 
     // --- Handlers (Remain the same) ---
     const handleSearchInputChange = (value) => setSearchInput(value);
@@ -96,17 +103,22 @@ export default function App() {
         });
     };
 
-    // --- Filtering Logic (Filters the data fetched from API) ---
-    // This logic now applies to the 'allFarms' state populated by the API call
+    // --- Filtering Logic (Applies to fetched data for display on this page) ---
     const filteredFarms = allFarms.filter(farm => {
-        const farmLocation = typeof farm.location === 'string' ? farm.location.trim().toLowerCase() : '';
+        const farmLocation = typeof farm.areaOfInterest === 'string' ? farm.areaOfInterest.trim().toLowerCase() : '';
         const cityMatch = !selectedCity || selectedCity === 'Melbourne, VIC';
         const regionToCompare = selectedRegion ? selectedRegion.trim().toLowerCase() : null;
         const regionMatch = !regionToCompare || (selectedCity === 'Melbourne, VIC' && farmLocation === regionToCompare);
-        // Ensure farm.productTypes exists before calling .some()
-        const productTypeMatch = selectedProductTypes.size === 0 || (Array.isArray(farm.productTypes) && farm.productTypes.some(type => selectedProductTypes.has(type)));
-        const term = searchInput.trim().toLowerCase(); // Use searchInput for immediate filtering on landing page
-        const farmName = typeof farm.name === 'string' ? farm.name.toLowerCase() : '';
+        const productTypeMatch = selectedProductTypes.size === 0 ||
+            (Array.isArray(farm.farmType) &&
+                farm.farmType.some(backendLabel => {
+                    const matchingType = Array.isArray(productTypesList)
+                        ? productTypesList.find(pt => pt.label === backendLabel)
+                        : null;
+                    return matchingType && selectedProductTypes.has(matchingType.key);
+                }));
+        const term = searchInput.trim().toLowerCase();
+        const farmName = typeof farm.farmName === 'string' ? farm.farmName.toLowerCase() : '';
         const farmDescription = typeof farm.description === 'string' ? farm.description.toLowerCase() : '';
         const searchMatch = term === '' || farmName.includes(term) || farmLocation.includes(term) || farmDescription.includes(term);
         return cityMatch && regionMatch && productTypeMatch && searchMatch;
@@ -114,15 +126,8 @@ export default function App() {
 
     // --- Render Logic ---
     const renderContent = () => {
-        // Show loading indicator while fetching
-        if (isLoading) {
-            return <div style={{ textAlign: 'center', padding: '40px' }}>Loading farm info...</div>;
-        }
-        // Show error message if fetching failed
-        if (error) {
-            return <div style={{ textAlign: 'center', padding: '40px', color: 'red' }}>Error: {error}</div>;
-        }
-        // Render farms once loaded
+        if (isLoading) { return <div style={{ textAlign: 'center', padding: '40px' }}>Loading farm info...</div>; }
+        if (error) { return <div style={{ textAlign: 'center', padding: '40px', color: 'red' }}>Error: {error}</div>; }
         return <FeaturedFarms
             farms={filteredFarms}
             favorites={favorites}
@@ -142,16 +147,18 @@ export default function App() {
                 onClearCity={handleClearCity}
                 onRegionSelect={handleRegionOptionClick}
                 onClearRegion={handleClearRegion}
-                productTypesList={productTypesList} // Still needed for the dropdown options
+                productTypesList={productTypesList}
                 selectedProductTypes={selectedProductTypes}
                 onToggleProductType={handleToggleProductType}
                 onClearProductTypes={handleClearProductTypes}
                 favorites={favorites}
-                allFarms={allFarms} // Pass all fetched farms for favorites popup
+                allFarms={allFarms}
             />
-            {/* CategoryFilter is removed */}
             {renderContent()}
             <Footer />
         </div>
     );
 }
+
+// Ensure App component is exported as default
+
