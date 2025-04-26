@@ -1,108 +1,121 @@
-import React, { useState, useEffect } from 'react'; // Ensure useEffect is imported
+import React, { useState, useEffect } from 'react';
 import './index.css';
 import Header from './components/Header.jsx';
-import CategoryFilter from './components/CategoryFilter.jsx';
+// import CategoryFilter from './components/CategoryFilter.jsx'; // Keep removed
 import FeaturedFarms from './components/FeaturedFarms.jsx';
 import Footer from './components/Footer.jsx';
-// Import static data (if not yet switched to API)
-import { featuredFarms as initialFarms, categories } from './data.jsx'; // Rename import to avoid confusion
+// Import productTypesList as well
+import { featuredFarms as initialFarms, productTypesList } from './data.jsx';
 
 export default function App() {
-    // State: Store the original/API-fetched list of farms
-    const [allFarms, setAllFarms] = useState(initialFarms); // Initialize with static data
-    // State: Store the list of selected categories
-    const [selectedCategories, setSelectedCategories] = useState([]);
-    // State: Store the current value of the search input
+    // --- State Management ---
+    const [allFarms, setAllFarms] = useState(initialFarms);
     const [searchInput, setSearchInput] = useState('');
-    // State: Store the currently active search term (used for filtering)
     const [searchTerm, setSearchTerm] = useState('');
-    // State: Loading and error states (if using API)
-    const [isLoading, setIsLoading] = useState(false); // Initial false as we use static data
+    const [selectedCity, setSelectedCity] = useState(null);
+    const [selectedRegion, setSelectedRegion] = useState(null);
+    // Add state for selected product types (using a Set for multi-select)
+    const [selectedProductTypes, setSelectedProductTypes] = useState(new Set());
+    const [favorites, setFavorites] = useState(new Set());
+    const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
 
-    // --- Handler Functions ---
-    // Handle changes in the search input field
-    const handleSearchInputChange = (value) => {
-        setSearchInput(value);
-        // Optional: Clear search results immediately when input is cleared
-        // if (value === '') {
-        //     setSearchTerm('');
-        // }
+    // --- Handlers ---
+    const handleSearchInputChange = (value) => setSearchInput(value);
+    const handleSearch = () => setSearchTerm(searchInput.trim());
+    const handleCityOptionClick = (city) => { setSelectedCity(city); if (city !== 'Melbourne, VIC') setSelectedRegion(null); };
+    const handleClearCity = () => { setSelectedCity(null); setSelectedRegion(null); };
+    const handleRegionOptionClick = (region) => { if (selectedCity === 'Melbourne, VIC') setSelectedRegion(region); };
+    const handleClearRegion = () => setSelectedRegion(null);
+    const toggleFavorite = (farmId) => { /* ... favorite logic ... */
+        setFavorites(prevFavorites => {
+            const newFavorites = new Set(prevFavorites);
+            if (newFavorites.has(farmId)) newFavorites.delete(farmId); else newFavorites.add(farmId);
+            return newFavorites;
+        });
     };
 
-    // Handle search trigger (button click or Enter key)
-    const handleSearch = () => {
-        // Set the current input value as the active search term
-        setSearchTerm(searchInput.trim()); // Trim whitespace
+    // Handler for toggling product type selection
+    const handleToggleProductType = (typeKey) => {
+        setSelectedProductTypes(prevTypes => {
+            const newTypes = new Set(prevTypes);
+            if (newTypes.has(typeKey)) {
+                newTypes.delete(typeKey); // Remove if already selected
+            } else {
+                newTypes.add(typeKey); // Add if not selected
+            }
+            console.log("[App] Selected product types:", Array.from(newTypes));
+            return newTypes;
+        });
     };
+    // Handler to clear all product type selections
+    const handleClearProductTypes = () => {
+        setSelectedProductTypes(new Set());
+        console.log("[App] Cleared product types");
+    }
 
-    // --- Data Fetching (if fetching from API) ---
-    // useEffect(() => {
-    //     const loadFarms = async () => {
-    //         setIsLoading(true);
-    //         setError(null);
-    //         try {
-    //             // const data = await fetchFarmsFromAPI(); // Replace with your API call
-    //             // setAllFarms(data);
-    //             setAllFarms(initialFarms); // Temporarily use static data
-    //         } catch (err) {
-    //             setError(err.message || "无法加载农场数据"); // Set error message in Chinese for display
-    //             setAllFarms([]);
-    //         } finally {
-    //             setIsLoading(false);
-    //         }
-    //     };
-    //     loadFarms();
-    // }, []);
 
     // --- Filtering Logic ---
-    // Filter farms based on selected categories and search term
+    console.log(`[App Filtering] City: "${selectedCity}", Region: "${selectedRegion}", Term: "${searchTerm}", Types: [${Array.from(selectedProductTypes).join(',')}]`);
+
     const filteredFarms = allFarms.filter(farm => {
-        // 1. Category filter
-        const categoryMatch = selectedCategories.length === 0 || selectedCategories.includes(farm.type);
+        const farmLocation = typeof farm.location === 'string' ? farm.location.trim().toLowerCase() : '';
+        const cityMatch = !selectedCity || selectedCity === 'Melbourne, VIC';
+        const regionToCompare = selectedRegion ? selectedRegion.trim().toLowerCase() : null;
+        const regionMatch = !regionToCompare || (selectedCity === 'Melbourne, VIC' && farmLocation === regionToCompare);
 
-        // 2. Search term filter (fuzzy search, case-insensitive)
-        const term = searchTerm.toLowerCase();
-        const searchMatch = searchTerm === '' ||
-            farm.name.toLowerCase().includes(term) ||
-            farm.location.toLowerCase().includes(term) ||
-            farm.description.toLowerCase().includes(term); // Optional: search description too
+        // Product Type filter (check if farm has AT LEAST ONE of the selected types)
+        const productTypeMatch = selectedProductTypes.size === 0 ||
+            (farm.productTypes && farm.productTypes.some(type => selectedProductTypes.has(type)));
 
-        // Must satisfy both conditions
-        return categoryMatch && searchMatch;
+        const term = searchTerm.trim().toLowerCase();
+        const farmName = typeof farm.name === 'string' ? farm.name.toLowerCase() : '';
+        const farmDescription = typeof farm.description === 'string' ? farm.description.toLowerCase() : '';
+        const searchMatch = term === '' ||
+            farmName.includes(term) ||
+            farmLocation.includes(term) ||
+            farmDescription.includes(term);
+
+        // Updated return statement
+        return cityMatch && regionMatch && productTypeMatch && searchMatch;
     });
 
     // --- Render Logic ---
     const renderContent = () => {
-        if (isLoading) {
-            // Can be replaced with a more sophisticated loading indicator component
-            return <div style={{ textAlign: 'center', padding: '40px' }}>正在加载农场信息...</div>; // Loading message in Chinese
-        }
-        if (error) {
-            return <div style={{ textAlign: 'center', padding: '40px', color: 'red' }}>错误：{error}</div>; // Error message in Chinese
-        }
-        // Pass the final filtered results to FeaturedFarms
-        return <FeaturedFarms farms={filteredFarms} />;
+        if (isLoading) { return <div style={{ textAlign: 'center', padding: '40px' }}>Loading farm info...</div>; }
+        if (error) { return <div style={{ textAlign: 'center', padding: '40px', color: 'red' }}>Error: {error}</div>; }
+        return <FeaturedFarms
+            farms={filteredFarms}
+            favorites={favorites}
+            onToggleFavorite={toggleFavorite}
+        />;
     };
 
-
     return (
-        // Apply global style classes
         <div className="font-sans antialiased text-gray-900 bg-gray-50 min-h-screen">
-            {/* Pass search-related state and handlers to Header */}
+            {/* Pass product type state and handlers down */}
             <Header
                 searchInput={searchInput}
                 onSearchInputChange={handleSearchInputChange}
                 onSearch={handleSearch}
+                selectedCity={selectedCity}
+                selectedRegion={selectedRegion}
+                onCitySelect={handleCityOptionClick}
+                onClearCity={handleClearCity}
+                onRegionSelect={handleRegionOptionClick}
+                onClearRegion={handleClearRegion}
+                // Product Type Props
+                productTypesList={productTypesList} // Pass the list of available types
+                selectedProductTypes={selectedProductTypes} // Pass the Set of selected types
+                onToggleProductType={handleToggleProductType} // Pass the toggle handler
+                onClearProductTypes={handleClearProductTypes} // Pass the clear handler
+                // Favorites Props
+                favorites={favorites}
+                allFarms={allFarms} // Pass all farms for the favorites popup
             />
 
-            <CategoryFilter
-                categories={categories} // Pass category data
-                selectedCategories={selectedCategories}
-                setSelectedCategories={setSelectedCategories}
-            />
+            {/* CategoryFilter is still removed */}
 
-            {/* Render the main content area based on loading/error state */}
             {renderContent()}
 
             <Footer />
