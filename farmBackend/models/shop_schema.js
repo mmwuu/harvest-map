@@ -28,6 +28,6 @@ const shopSchema = new mongoose.Schema({
     }],
     // Image URL list (all images stored in google cloud)
     photos: [{ type: [String], required: true }],
-});
+}, { collection: 'Shops' });
 
 export default mongoose.model('Shop', shopSchema);

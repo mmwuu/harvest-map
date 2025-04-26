@@ -27,7 +27,7 @@ app.use(express.json()); // Enable JSON body parsing in requests
 const uri = process.env.MONGODB_URI;
 
 mongoose.connect(uri, {
-    dbName: 'Farm_Info' // database name
+    dbName: 'Farm_Info',  // database name
 })
     .then(() => console.log("Connected to MongoDB using Mongoose"))
     .catch(err => console.error("MongoDB connection error:", err));
@@ -43,8 +43,8 @@ app.get('/api/farmshops/byRegion', async (req, res) => {
 
     try {
         // Query the database for shops in the given region
-        const shops = await Shop.find({ areaOfInterest: region });
-
+        const shops = await Shop.find({ areaOfInterest: region }, {},  {});
+        console.log(shops)
         if (shops.length === 0) {
             return res.status(404).json({ error: 'No shops found in the specified region' });
         }
