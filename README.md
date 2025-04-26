@@ -2,8 +2,6 @@
 
 FarmFinder is a React-based web application designed to help users discover and explore farm shops. It provides a user-friendly interface inspired by popular listing platforms, showcasing farm shops with key details, images, and location information. Currently, it uses mock data for demonstration purposes.
 
-**(Optional: Add screenshots here showing the list view, a card detail, and the detail page)**
-
 ## Features
 
 * **Farm Shop Listing:** Displays a grid of farm shops with essential information.
