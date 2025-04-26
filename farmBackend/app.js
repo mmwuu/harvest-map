@@ -139,7 +139,7 @@ app.post('/api/farmshops/areaOfInterest', async (req, res) => {
             const updatedShop = await Shop.findOneAndUpdate(
                 {shopID},
                 {areaOfInterest: closestRegion},
-                {new: true} // Return the updated document
+                {return: true} // Return the updated document
             );
 
             if (!updatedShop) {
