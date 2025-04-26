@@ -14,7 +14,7 @@ FarmFinder is a React-based web application designed to help users discover and 
     * A "Local Favourite" badge for designated shops.
 * **Responsive Design:** Adapts layout for different screen sizes using Tailwind CSS.
 * **Header & Filtering:** Includes a sticky header with:
-    * Application logo (`HarvestMap`).
+    * Application logo
     * A search bar (placeholder functionality).
     * User/language/settings icons (placeholders).
     * Filter buttons below the search bar (placeholder functionality).
