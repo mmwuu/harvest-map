@@ -17,7 +17,7 @@ FarmFinder is a React-based web application designed to help users discover and 
     * A search bar.
     * User/language/settings icons.
     * Filter buttons below the search bar
-* **Interactivemap:** An interactive map using the Google Maps API with markers for the farm shops.
+* **Interactive Map:** An interactive map using the Google Maps API with markers for the farm shops.
 
 ## Tech Stack
 
